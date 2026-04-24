@@ -1,0 +1,6 @@
+cd "d:\New folder\server"
+npm run dev
+
+
+cd "d:\New folder\client"
+npm run dev
