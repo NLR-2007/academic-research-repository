@@ -47,18 +47,21 @@ async function uploadTemp(req, res) {
     hashSum.update(fileBuffer);
     const fileHash = hashSum.digest('hex');
 
-    const [[existing]] = await pool.query('SELECT id FROM research_papers WHERE file_hash = ? AND is_deleted = FALSE', [fileHash]);
-    
-    if (existing) {
-      await fs.unlink(req.file.path).catch(() => {});
-      return res.status(409).json({ message: 'THIS PAPER IS SOMEONES WORKS U CANNOT UPLOAD THIS.' });
+    // Only check duplicates for PDF files
+    if (req.file.mimetype === 'application/pdf') {
+      const [[existing]] = await pool.query('SELECT id FROM research_papers WHERE file_hash = ? AND is_deleted = FALSE', [fileHash]);
+      if (existing) {
+        await fs.unlink(req.file.path).catch(() => {});
+        return res.status(409).json({ message: 'THIS PAPER IS SOMEONES WORKS U CANNOT UPLOAD THIS.' });
+      }
     }
 
     res.status(201).json({
       fileName: req.file.originalname,
       size: req.file.size,
       tempPath: req.file.filename,
-      fileHash
+      fileHash,
+      mimetype: req.file.mimetype
     });
   } catch (error) {
     console.error('Upload temp error:', error);
@@ -83,7 +86,7 @@ async function duplicateCheck(req, res) {
 async function submitPaper(req, res) {
   try {
     const {
-      tempPath, title, authors, abstract, keywords, doi, journal, year, volume, issue,
+      tempPath, codeTempPath, title, authors, abstract, keywords, doi, journal, year, volume, issue,
       category_id, sub_category, visibility, license, declaration
     } = req.body;
 
@@ -96,12 +99,15 @@ async function submitPaper(req, res) {
     const now = new Date();
     const yyyy = String(now.getFullYear());
     const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const destDir = path.join(__dirname, '..', 'uploads', 'papers', yyyy, mm);
-    await fs.mkdir(destDir, { recursive: true });
+    
+    const paperDestDir = path.join(__dirname, '..', 'uploads', 'papers', yyyy, mm);
+    const codeDestDir = path.join(__dirname, '..', 'uploads', 'code', yyyy, mm);
+    await fs.mkdir(paperDestDir, { recursive: true });
+    await fs.mkdir(codeDestDir, { recursive: true });
 
     const source = path.join(__dirname, '..', 'uploads', 'temp', tempPath);
     await fs.access(source).catch(() => {
-      const error = new Error('Temporary upload not found. Please upload the PDF again before submitting.');
+      const error = new Error('Temporary paper upload not found.');
       error.status = 400;
       throw error;
     });
@@ -112,36 +118,61 @@ async function submitPaper(req, res) {
     const fileHash = hashSum.digest('hex');
 
     const [[existing]] = await pool.query('SELECT id FROM research_papers WHERE file_hash = ? AND is_deleted = FALSE', [fileHash]);
-    if (existing) {
-      return res.status(409).json({ message: 'THIS PAPER IS SOMEONES WORKS U CANNOT UPLOAD THIS.' });
+    if (existing) return res.status(409).json({ message: 'THIS PAPER IS SOMEONES WORKS U CANNOT UPLOAD THIS.' });
+
+    const paperDestName = `${id}.pdf`;
+    const paperDest = path.join(paperDestDir, paperDestName);
+    const relativePaperPath = path.join('papers', yyyy, mm, paperDestName).replace(/\\/g, '/');
+
+    let relativeCodePath = null;
+    let codeHash = null;
+
+    if (codeTempPath) {
+      const codeSource = path.join(__dirname, '..', 'uploads', 'temp', codeTempPath);
+      await fs.access(codeSource).catch(() => {
+        const error = new Error('Temporary code upload not found.');
+        error.status = 400;
+        throw error;
+      });
+
+      const codeBuffer = await fs.readFile(codeSource);
+      const cHashSum = crypto.createHash('sha256');
+      cHashSum.update(codeBuffer);
+      codeHash = cHashSum.digest('hex');
+
+      const codeDestName = `${id}.zip`;
+      const codeDest = path.join(codeDestDir, codeDestName);
+      relativeCodePath = path.join('code', yyyy, mm, codeDestName).replace(/\\/g, '/');
+      await fs.rename(codeSource, codeDest);
     }
 
-    const destName = `${id}.pdf`;
-    const dest = path.join(destDir, destName);
-    const relativePath = path.join('papers', yyyy, mm, destName).replace(/\\/g, '/');
-
-    await fs.rename(source, dest);
+    await fs.rename(source, paperDest);
 
     try {
       await pool.query(
         `INSERT INTO research_papers
          (id, user_id, title, authors, abstract, keywords, doi, journal, year, volume, issue,
-          category_id, sub_category, visibility, license, file_path, file_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          category_id, sub_category, visibility, license, file_path, file_hash, code_path, code_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, req.user.id, title, JSON.stringify(parseJson(authors)), abstract,
           JSON.stringify(parseJson(keywords)), doi || null, journal || null, Number(year),
           volume || null, issue || null, Number(category_id), sub_category || null,
-          visibility || 'public', license || 'open_access', relativePath, fileHash
+          visibility || 'public', license || 'open_access', relativePaperPath, fileHash,
+          relativeCodePath, codeHash
         ]
       );
       await pool.query('UPDATE categories SET paper_count = paper_count + 1 WHERE id = ?', [category_id]);
     } catch (error) {
-      await fs.unlink(dest).catch(() => {});
+      await fs.unlink(paperDest).catch(() => {});
+      if (relativeCodePath) {
+        const codeAbs = path.join(__dirname, '..', 'uploads', relativeCodePath);
+        await fs.unlink(codeAbs).catch(() => {});
+      }
       throw error;
     }
 
-    res.status(201).json({ id, status: 'pending', message: 'Paper submitted for admin review' });
+    res.status(201).json({ id, status: 'pending', message: 'Research & Code submitted for admin review' });
   } catch (error) {
     console.error(error);
     res.status(error.status || 500).json({ message: error.message || 'Paper submission failed' });
@@ -222,7 +253,8 @@ async function getPaper(req, res) {
   }
 
   const fileUrl = allowed ? `/uploads/${paper.file_path}` : null;
-  res.json({ ...paper, canAccess: allowed, fileUrl, requestStatus });
+  const codeUrl = (allowed && paper.code_path) ? `/uploads/${paper.code_path}` : null;
+  res.json({ ...paper, canAccess: allowed, fileUrl, codeUrl, requestStatus });
 }
 
 async function requestAccess(req, res) {

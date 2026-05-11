@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import AdminSidebar from '../../components/AdminSidebar.jsx';
 import BadgeIcon from '../../components/BadgeIcon.jsx';
 import { adminApi } from '../../api/endpoints.js';
 
@@ -23,9 +22,7 @@ export default function UserManager() {
   }
 
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
-      <section className="admin-main">
+    <section className="admin-main">
         <div className="admin-hero-panel">
           <div>
             <p className="eyebrow dark">Network Administration</p>
@@ -79,7 +76,6 @@ export default function UserManager() {
             </div>
           )}
         </div>
-      </section>
-    </div>
+    </section>
   );
 }

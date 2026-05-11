@@ -13,6 +13,7 @@ import AllPapers from './pages/AllPapers.jsx';
 import AdminDashboard from './pages/Admin/Dashboard.jsx';
 import PaperManager from './pages/Admin/PaperManager.jsx';
 import UserManager from './pages/Admin/UserManager.jsx';
+import About from './pages/About.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './styles.css';
 
@@ -37,6 +38,7 @@ function App() {
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/papers" element={<AllPapers />} />
             <Route path="/papers/:id" element={<PaperDetail />} />
+            <Route path="/about" element={<About />} />
             <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
             <Route path="/admin/papers" element={<Protected admin><PaperManager /></Protected>} />
             <Route path="/admin/users" element={<Protected admin><UserManager /></Protected>} />

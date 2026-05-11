@@ -34,6 +34,12 @@ async function ensurePaperColumns() {
   if (!existing.has('file_hash')) {
     await pool.query('ALTER TABLE research_papers ADD COLUMN file_hash VARCHAR(64) NULL AFTER file_path');
   }
+  if (!existing.has('code_path')) {
+    await pool.query('ALTER TABLE research_papers ADD COLUMN code_path VARCHAR(500) NULL AFTER file_hash');
+  }
+  if (!existing.has('code_hash')) {
+    await pool.query('ALTER TABLE research_papers ADD COLUMN code_hash VARCHAR(64) NULL AFTER code_path');
+  }
 }
 
 async function ensureRuntimeSchema() {

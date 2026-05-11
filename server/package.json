@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "schema": "mysql -u $DB_USER -p$DB_PASSWORD $DB_NAME < database/schema.sql"
+    "schema": "mysql -u $DB_USER -p$DB_PASSWORD $DB_NAME < database/schema.sql",
+    "seed:papers": "node utils/seedPapers.js",
+    "seed:clear": "node utils/clearSeededPapers.js"
   },
   "dependencies": {
     "axios": "^1.6.8",

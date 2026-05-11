@@ -1,6 +1,6 @@
-cd "d:\New folder\server"
+cd "E:\KLH\Tri-Sem-03\FEDF\PROJECT\New folder\server"
 npm run dev
 
 
-cd "d:\New folder\client"
-npm run dev
+
+

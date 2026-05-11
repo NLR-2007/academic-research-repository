@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
-import AdminSidebar from '../../components/AdminSidebar.jsx';
 import { adminApi, categoryApi } from '../../api/endpoints.js';
 import { uploadsBase } from '../../api/client';
+import { useAdminActions } from '../../hooks/useAdminActions';
 
 export default function PaperManager() {
   const [papers, setPapers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({ status: '', category: '', q: '', visibility: '' });
+  const [loading, setLoading] = useState(true);
+
+  const { approve, reject, remove, isProcessing } = useAdminActions(load);
 
   async function load() {
-    const { data } = await adminApi.papers(filters);
-    setPapers(data);
+    setLoading(true);
+    try {
+      const { data } = await adminApi.papers(filters);
+      setPapers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -18,34 +28,14 @@ export default function PaperManager() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(() => {
+      load();
+    }, 250);
+    return () => clearTimeout(timer);
   }, [filters]);
 
-  async function approve(id) {
-    await adminApi.approve(id);
-    load();
-  }
-
-  async function reject(id) {
-    const reason = window.prompt('Enter rejection reason');
-    if (reason) {
-      await adminApi.reject(id, reason);
-      load();
-    }
-  }
-
-  async function remove(id) {
-    const reason = window.prompt('Enter deletion reason');
-    if (reason) {
-      await adminApi.deletePaper(id, reason);
-      load();
-    }
-  }
-
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
-      <section className="admin-main">
+    <section className="admin-main">
         <div className="admin-hero-panel">
           <div>
             <p className="eyebrow dark">Content Oversight</p>
@@ -76,9 +66,14 @@ export default function PaperManager() {
           </div>
         </div>
 
-        <div className="stack-list">
-          {papers.length ? papers.map((paper) => (
-            <article className="admin-paper-card premium" key={paper.id}>
+        <div className="stack-list" style={{ position: 'relative', minHeight: '200px' }}>
+          {isProcessing && <div className="loading-overlay">Processing...</div>}
+          {loading ? (
+            <div className="workspace-panel" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p className="muted">Loading papers...</p>
+            </div>
+          ) : papers.length ? papers.map((paper) => (
+            <article className="admin-paper-card premium fade-in" key={paper.id}>
               <div className="admin-card-info">
                 <div className="admin-card-header">
                   <strong>{paper.title}</strong>
@@ -101,11 +96,11 @@ export default function PaperManager() {
                 </a>
                 {paper.status === 'pending' && (
                   <>
-                    <button className="approve-button" onClick={() => approve(paper.id)}>Approve</button>
-                    <button className="reject-button" onClick={() => reject(paper.id)}>Reject</button>
+                    <button className="approve-button" onClick={() => approve(paper.id)} disabled={isProcessing}>Approve</button>
+                    <button className="reject-button" onClick={() => reject(paper.id)} disabled={isProcessing}>Reject</button>
                   </>
                 )}
-                <button className="danger-button" onClick={() => remove(paper.id)}>Delete</button>
+                <button className="danger-button" onClick={() => remove(paper.id)} disabled={isProcessing}>Delete</button>
               </div>
             </article>
           )) : (
@@ -114,7 +109,6 @@ export default function PaperManager() {
             </div>
           )}
         </div>
-      </section>
-    </div>
+    </section>
   );
 }

@@ -13,15 +13,19 @@ const storage = multer.diskStorage({
   }
 });
 
-const pdfOnly = (_req, file, cb) => {
-  if (file.mimetype !== 'application/pdf') {
-    return cb(new Error('Only PDF uploads are allowed'));
+const allowedTypes = (_req, file, cb) => {
+  const isPdf = file.mimetype === 'application/pdf';
+  const isZip = ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'].includes(file.mimetype) 
+             && file.originalname.toLowerCase().endsWith('.zip');
+  
+  if (isPdf || isZip) {
+    return cb(null, true);
   }
-  return cb(null, true);
+  return cb(new Error('Only PDF and ZIP uploads are allowed'));
 };
 
 module.exports = multer({
   storage,
-  fileFilter: pdfOnly,
-  limits: { fileSize: 20 * 1024 * 1024 }
+  fileFilter: allowedTypes,
+  limits: { fileSize: 50 * 1024 * 1024 } // Increased limit for code zips
 });
