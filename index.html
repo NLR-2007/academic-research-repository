@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARR – Academic Research Repository</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Trebuchet+MS&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --green: #123F33;
+    --green-mid: #1A5240;
+    --green-dark: #0A2920;
+    --green-deep: #0F3528;
+    --gold: #C9A94A;
+    --gold-light: #E8C96A;
+    --cream: #FFFDF5;
+    --cream-mid: #F5F0E8;
+    --cream-dark: #F0EBE0;
+    --screen-bg: #0F1A15;
+    --screen-dark: #0A1510;
+    --screen-panel: #111D17;
+    --screen-header: #1A3028;
+    --code-bg: #040D09;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .poster {
+    width: 680px;
+    min-width: 680px;
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Grid pattern overlay */
+  .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(18,63,51,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(18,63,51,0.08) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Radial glow overlays */
+  .poster::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 68% 68% at 50% 38%, rgba(18,63,51,0.07) 0%, transparent 100%),
+      radial-gradient(ellipse 52% 44% at 50% 82%, rgba(201,169,74,0.09) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 1;
+    padding: 40px;
+  }
+
+  /* ── TOP BORDER ── */
+  .top-border {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 2;
+  }
+  .border-thick {
+    height: 3px;
+    background: var(--green);
+    border-radius: 1px;
+    margin: 40px 40px 0;
+  }
+  .border-thin {
+    height: 0.5px;
+    background: var(--gold);
+    opacity: 0.6;
+    margin: 0 40px;
+    margin-top: 1px;
+  }
+
+  /* ── META ROW ── */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    margin-bottom: 20px;
+  }
+  .meta-row span {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+    opacity: 0.5;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  /* Column guide lines */
+  .col-line-left, .col-line-right {
+    position: absolute;
+    top: 82px; bottom: 40px;
+    width: 0.4px;
+    background: var(--green);
+    opacity: 0.1;
+    z-index: 1;
+  }
+  .col-line-left { left: 40px; }
+  .col-line-right { right: 40px; }
+
+  /* ── BADGE ── */
+  .badge-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .badge-outer {
+    position: relative;
+    width: 176px;
+    height: 176px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge-ring-1 {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(201,169,74,0.35);
+  }
+  .badge-ring-2 {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    border: 0.5px solid rgba(201,169,74,0.2);
+  }
+  .badge-body {
+    position: absolute;
+    inset: 24px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 3px 14px rgba(10,41,32,0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge-inner-ring {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    border: 0.8px solid rgba(201,169,74,0.45);
+  }
+  /* cardinal dots */
+  .dot { position: absolute; border-radius: 50%; background: var(--gold); }
+  .dot-top    { width:6px; height:6px; top:  -3px; left: 50%; transform:translateX(-50%); }
+  .dot-bottom { width:6px; height:6px; bottom:-3px; left: 50%; transform:translateX(-50%); }
+  .dot-left   { width:6px; height:6px; left: -3px; top: 50%; transform:translateY(-50%); }
+  .dot-right  { width:6px; height:6px; right:-3px; top: 50%; transform:translateY(-50%); }
+  .dot-sm { width:4px; height:4px; opacity:0.55; }
+  .dot-tl { top: 14%; left: 14%; }
+  .dot-tr { top: 14%; right:14%; }
+  .dot-bl { bottom:14%; left: 14%; }
+  .dot-br { bottom:14%; right:14%; }
+
+  .badge-top-text {
+    position: absolute;
+    top: 18px;
+    font-size: 7.5px;
+    letter-spacing: 3.5px;
+    color: var(--gold);
+    opacity: 0.7;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .badge-arr {
+    font-family: 'Trebuchet MS', Georgia, serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .badge-sub-text {
+    position: absolute;
+    bottom: 22px;
+    font-size: 7.5px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    opacity: 0.7;
+    text-transform: uppercase;
+  }
+
+  /* ── HEADLINE ── */
+  .headline {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .headline h1 {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 33px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1.18;
+    letter-spacing: -0.5px;
+  }
+  .gold-rule {
+    width: 260px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 1px;
+    margin: 10px auto 12px;
+  }
+  .tagline-caps {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    opacity: 0.6;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .tagline-italic {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--green);
+    opacity: 0.78;
+  }
+
+  /* ── DIVIDERS ── */
+  .divider {
+    height: 0.5px;
+    background: linear-gradient(90deg, transparent 0%, rgba(201,169,74,0.7) 25%, rgba(201,169,74,0.7) 75%, transparent 100%);
+    margin: 18px 0;
+  }
+
+  /* ── WHAT IS ARR BOX ── */
+  .what-box {
+    border: 0.5px solid rgba(18,63,51,0.12);
+    border-radius: 6px;
+    background: rgba(18,63,51,0.04);
+    padding: 18px 24px;
+    margin-bottom: 0;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+    opacity: 0.5;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .what-box p {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 13px;
+    color: var(--green);
+    opacity: 0.82;
+    text-align: center;
+    line-height: 1.65;
+  }
+
+  /* ── MODULES GRID ── */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 0;
+  }
+  .module-card {
+    border: 0.5px solid rgba(18,63,51,0.15);
+    border-radius: 5px;
+    background: rgba(18,63,51,0.05);
+    padding: 10px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--gold);
+    border-radius: 2px 0 0 2px;
+  }
+  .module-card h4 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    opacity: 0.9;
+    margin-bottom: 4px;
+    padding-left: 6px;
+  }
+  .module-card p {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 10px;
+    color: var(--green);
+    opacity: 0.65;
+    line-height: 1.5;
+    padding-left: 6px;
+  }
+  /* 10th module centered in last row */
+  .modules-grid .module-card:last-child {
+    grid-column: 2;
+  }
+
+  /* ── LAPTOP ILLUSTRATION ── */
+  .laptop-wrap {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    margin: 4px 0 6px;
+  }
+  .laptop-shadow {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 350px;
+    height: 24px;
+    background: radial-gradient(ellipse, rgba(18,63,51,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .laptop {
+    width: 380px;
+    position: relative;
+  }
+  /* Lid */
+  .laptop-lid {
+    width: 100%;
+    height: 230px;
+    background: linear-gradient(180deg, #1A5240 0%, #0F3528 100%);
+    border-radius: 8px;
+    border: 0.8px solid rgba(201,169,74,0.3);
+    position: relative;
+    box-shadow: 0 6px 28px rgba(10,41,32,0.13);
+    overflow: hidden;
+  }
+  .screen-bezel {
+    position: absolute;
+    inset: 8px;
+    background: #0A1F18;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .screen {
+    position: absolute;
+    inset: 4px;
+    background: var(--screen-bg);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Title bar */
+  .screen-titlebar {
+    height: 17px;
+    background: #162C22;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    position: relative;
+  }
+  .traffic-lights { display: flex; gap: 4px; align-items: center; }
+  .tl { width: 7px; height: 7px; border-radius: 50%; }
+  .tl-red  { background: #E24B4A; }
+  .tl-amber{ background: #EF9F27; }
+  .tl-green{ background: #639922; }
+  .screen-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 6.5px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+  /* Screen body: two panels */
+  .screen-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  .panel-left {
+    width: 49%;
+    background: var(--screen-panel);
+    display: flex;
+    flex-direction: column;
+    border-right: 1.5px solid rgba(201,169,74,0.25);
+  }
+  .panel-right {
+    flex: 1;
+    background: var(--screen-dark);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-header {
+    height: 14px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+  .panel-left .panel-header { background: var(--screen-header); }
+  .panel-right .panel-header { background: #13261F; }
+  .panel-label {
+    font-size: 6px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+  .panel-content { flex:1; padding: 4px 6px; display: flex; gap: 4px; }
+  /* PDF page mock */
+  .pdf-page {
+    width: 72px;
+    height: 90px;
+    background: rgba(245,240,232,0.92);
+    border-radius: 1px;
+    flex-shrink: 0;
+    padding: 6px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .pdf-line {
+    height: 2.5px;
+    border-radius: 1px;
+    background: var(--green);
+  }
+  .pdf-chart {
+    margin-top: 4px;
+    flex: 1;
+    background: rgba(29,158,117,0.15);
+    border-radius: 1px;
+    display: flex;
+    align-items: flex-end;
+    padding: 2px 3px;
+    gap: 3px;
+  }
+  .pdf-bar { border-radius: 1px; background: rgba(18,63,51,0.45); width: 7px; }
+  /* PDF metadata sidebar */
+  .pdf-meta { flex: 1; padding: 2px 0; display: flex; flex-direction: column; gap: 5px; }
+  .pdf-cite-label { font-size: 5.5px; color: #5DCAA5; opacity: 0.8; font-family: 'Trebuchet MS', sans-serif; }
+  .pdf-cite-line { height: 1.5px; background: var(--gold); opacity: 0.4; border-radius: 1px; }
+  .pdf-cite-sub { height: 2px; background: rgba(93,202,165,0.18); border-radius: 1px; }
+  .pdf-tags { display: flex; gap: 3px; }
+  .pdf-tag {
+    background: #1A3028;
+    border-radius: 10px;
+    font-size: 5px;
+    padding: 1px 5px;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+  .pdf-tag-green { color: #5DCAA5; }
+  .pdf-tag-gold  { color: var(--gold); }
+  .pdf-dl { font-size: 5px; color: #5DCAA5; opacity: 0.6; font-family: 'Trebuchet MS', sans-serif; }
+  .pdf-date { font-size: 5px; color: var(--gold); opacity: 0.5; font-family: 'Trebuchet MS', sans-serif; }
+  /* Code editor */
+  .code-content { flex:1; padding: 4px 6px; font-family: 'Courier New', monospace; font-size: 5.5px; display: flex; flex-direction: column; gap: 1px; }
+  .c-teal  { color: #5DCAA5; }
+  .c-gold  { color: var(--gold); }
+  .c-amber { color: #EF9F27; }
+  .c-red   { color: #E24B4A; }
+  .c-white { color: rgba(245,240,232,0.7); }
+  .c-green-l { color: #1D9E75; }
+  .terminal {
+    background: var(--code-bg);
+    padding: 3px 6px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    height: 30px;
+  }
+  .cursor {
+    display: inline-block;
+    width: 5px;
+    height: 1.5px;
+    background: #5DCAA5;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+  /* Laptop base */
+  .laptop-base {
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(180deg, #1C5C47 0%, var(--green) 100%);
+    border-radius: 0 0 3px 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    position: relative;
+  }
+  .laptop-base::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(201,169,74,0.18);
+    border-radius: 1px;
+  }
+  .trackpad {
+    width: 60px;
+    height: 13px;
+    background: rgba(10,41,32,0.22);
+    border-radius: 2px;
+    margin: 0 auto;
+  }
+
+  /* ── TEAM SECTION ── */
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .team-card {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    border: 0.8px solid rgba(201,169,74,0.4);
+    border-radius: 6px;
+    padding: 14px 14px 14px 14px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 62px;
+  }
+  .team-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(201,169,74,0.5);
+    border-radius: 3px 3px 0 0;
+  }
+  .team-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(201,169,74,0.12);
+    border: 0.8px solid rgba(201,169,74,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+  .team-info { display: flex; flex-direction: column; gap: 2px; }
+  .team-num {
+    font-size: 8px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    opacity: 0.6;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .team-name {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+  .team-id {
+    font-size: 10px;
+    color: var(--gold);
+    opacity: 0.6;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+
+  /* ── BOTTOM STACK ── */
+  .bottom-stack {
+    font-size: 8px;
+    color: var(--green);
+    opacity: 0.35;
+    text-align: center;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+
+  /* ── BOTTOM BORDER ── */
+  .bottom-border-thin {
+    height: 0.5px;
+    background: var(--gold);
+    opacity: 0.5;
+    margin: 0 40px;
+    border-radius: 1px;
+  }
+  .bottom-border-thick {
+    height: 3px;
+    background: var(--green);
+    border-radius: 1px;
+    margin: 1px 40px 40px;
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <!-- Top border -->
+  <div class="top-border">
+    <div class="border-thick"></div>
+    <div class="border-thin"></div>
+  </div>
+
+  <!-- Column guide lines -->
+  <div class="col-line-left"></div>
+  <div class="col-line-right"></div>
+
+  <div class="inner">
+
+    <!-- Meta row -->
+    <div class="meta-row">
+      <span>Academic Research Repository</span>
+      <span>Est. 2025</span>
+    </div>
+
+    <!-- ── BADGE ── -->
+    <div class="badge-wrap">
+      <div class="badge-outer">
+        <div class="badge-ring-1"></div>
+        <div class="badge-ring-2"></div>
+        <!-- Cardinal dots on ring-1 -->
+        <div class="dot dot-top" style="top:-3px;"></div>
+        <div class="dot dot-bottom" style="bottom:-3px;"></div>
+        <div class="dot dot-left" style="left:-3px;"></div>
+        <div class="dot dot-right" style="right:-3px;"></div>
+        <!-- Diagonal small dots -->
+        <div class="dot dot-sm dot-tl"></div>
+        <div class="dot dot-sm dot-tr"></div>
+        <div class="dot dot-sm dot-bl"></div>
+        <div class="dot dot-sm dot-br"></div>
+        <!-- Badge body -->
+        <div class="badge-body">
+          <div class="badge-inner-ring"></div>
+          <div class="badge-top-text">Academic</div>
+          <div class="badge-arr">ARR</div>
+          <div class="badge-sub-text">Research · Code · Knowledge</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HEADLINE ── -->
+    <div class="headline">
+      <h1>Academic Research<br>Repository</h1>
+      <div class="gold-rule"></div>
+      <div class="tagline-caps">Research · Implementation · Repository</div>
+      <div class="tagline-italic">"Where Papers Meet Code."</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── WHAT IS ARR ── -->
+    <div class="what-box">
+      <div class="section-label">What is ARR?</div>
+      <p>ARR is a full-stack web platform where researchers upload, discover,<br>
+      and cite academic papers alongside their source code. Every paper<br>
+      gets an auto-generated citation, a download counter, and category tags.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── CORE MODULES ── -->
+    <div class="section-label" style="margin-bottom:12px;">Core Modules</div>
+    <div class="modules-grid">
+
+      <div class="module-card">
+        <h4>Upload Form</h4>
+        <p>Drag-and-drop PDF + ZIP upload with metadata fields and progress indicator.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Citation Generator</h4>
+        <p>Auto-builds APA / MLA / IEEE citations from paper metadata with one-click copy.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Search &amp; Filter</h4>
+        <p>Full-text search by title, author, category tags, and date range filters.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Download Tracker</h4>
+        <p>Logs every download with timestamps; live counter on each paper card.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>PDF Preview</h4>
+        <p>In-browser PDF viewer with page navigation before download is required.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Admin Panel</h4>
+        <p>Manage papers, users, tags, and moderation queue via a secure dashboard.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>User Profile</h4>
+        <p>Personal dashboard showing uploads, saved papers, and citation history.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Notifications</h4>
+        <p>Real-time alerts for paper approvals, new citations, and download milestones.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>Category Tags</h4>
+        <p>Hierarchical taxonomy for CS, ML, Physics, Bio, and 30+ custom domains.</p>
+      </div>
+
+      <div class="module-card">
+        <h4>REST API + Postman</h4>
+        <p>Full CRUD endpoints tested via Postman collection; docs available for all routes.</p>
+      </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── DASHBOARD PREVIEW LABEL ── -->
+    <div class="section-label" style="margin-bottom:10px;">Dashboard Preview</div>
+
+    <!-- ── LAPTOP ── -->
+    <div class="laptop-wrap">
+      <div class="laptop-shadow"></div>
+      <div class="laptop">
+        <!-- Lid / screen -->
+        <div class="laptop-lid">
+          <div class="screen-bezel">
+            <div class="screen">
+              <!-- Title bar -->
+              <div class="screen-titlebar">
+                <div class="traffic-lights">
+                  <div class="tl tl-red"></div>
+                  <div class="tl tl-amber"></div>
+                  <div class="tl tl-green"></div>
+                </div>
+                <div class="screen-title">ARR Dashboard · v1.0</div>
+              </div>
+
+              <!-- Two panels -->
+              <div class="screen-body">
+
+                <!-- Left: PDF Viewer -->
+                <div class="panel-left">
+                  <div class="panel-header">
+                    <span class="panel-label">PDF Viewer</span>
+                  </div>
+                  <div class="panel-content">
+                    <!-- Paper mock -->
+                    <div class="pdf-page">
+                      <div class="pdf-line" style="opacity:0.5;width:58px;"></div>
+                      <div class="pdf-line" style="opacity:0.3;width:50px;"></div>
+                      <div class="pdf-line" style="opacity:0.3;width:54px;"></div>
+                      <div class="pdf-line" style="opacity:0.3;width:44px;"></div>
+                      <div class="pdf-line" style="opacity:0.3;width:58px;"></div>
+                      <div class="pdf-line" style="opacity:0.3;width:48px;"></div>
+                      <div class="pdf-chart">
+                        <div class="pdf-bar" style="height:10px;"></div>
+                        <div class="pdf-bar" style="height:15px;"></div>
+                        <div class="pdf-bar" style="height:8px;"></div>
+                        <div class="pdf-bar" style="height:13px;"></div>
+                      </div>
+                    </div>
+                    <!-- Metadata -->
+                    <div class="pdf-meta">
+                      <div>
+                        <div class="pdf-cite-label">APA Citation</div>
+                        <div class="pdf-cite-line" style="width:64px;margin:2px 0;"></div>
+                        <div class="pdf-cite-sub" style="width:55px;margin-bottom:2px;"></div>
+                        <div class="pdf-cite-sub" style="width:48px;"></div>
+                      </div>
+                      <div>
+                        <div class="pdf-cite-label" style="color:var(--gold);margin-bottom:3px;">Tags</div>
+                        <div class="pdf-tags">
+                          <span class="pdf-tag pdf-tag-green">ML</span>
+                          <span class="pdf-tag pdf-tag-gold">NLP</span>
+                        </div>
+                      </div>
+                      <div class="pdf-dl">↓ 1,247 downloads</div>
+                      <div class="pdf-date">Uploaded: Jan 12 2025</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Code Editor -->
+                <div class="panel-right">
+                  <div class="panel-header">
+                    <span class="panel-label">Code Editor</span>
+                  </div>
+                  <div class="code-content">
+                    <div><span class="c-teal">import</span><span class="c-white"> ResearchAPI</span></div>
+                    <div><span class="c-gold">const</span><span class="c-green-l"> repo</span><span class="c-white"> = new API()</span></div>
+                    <div><span class="c-red">// Upload paper</span></div>
+                    <div><span class="c-teal">repo</span><span class="c-white">.upload({</span></div>
+                    <div>&nbsp;&nbsp;<span class="c-gold">title:</span><span class="c-amber"> "ARR Study"</span></div>
+                    <div>&nbsp;&nbsp;<span class="c-gold">tags:</span><span class="c-amber"> ["ML","NLP"]</span></div>
+                    <div><span class="c-white">})</span></div>
+                  </div>
+                  <div class="terminal">
+                    <div style="font-size:5px;" class="c-green-l">$ arr --push paper.pdf</div>
+                    <div style="font-size:5px;" class="c-teal">✓ Uploaded successfully</div>
+                    <div style="font-size:5px;" class="c-gold">→ Citation generated</div>
+                    <div class="cursor"></div>
+                  </div>
+                </div>
+
+              </div><!-- screen-body -->
+            </div><!-- screen -->
+          </div><!-- screen-bezel -->
+        </div><!-- laptop-lid -->
+
+        <!-- Base -->
+        <div class="laptop-base">
+          <div class="trackpad"></div>
+        </div>
+      </div><!-- laptop -->
+    </div><!-- laptop-wrap -->
+
+    <div class="divider"></div>
+
+    <!-- ── TEAM ── -->
+    <div class="section-label" style="margin-bottom:12px;">Project Team</div>
+    <div class="team-grid">
+
+      <div class="team-card">
+        <div class="team-avatar">NL</div>
+        <div class="team-info">
+          <div class="team-num">Team Member 01</div>
+          <div class="team-name">Nimma Lokesh Reddy</div>
+          <div class="team-id">ID: 2520030366</div>
+        </div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar">RR</div>
+        <div class="team-info">
+          <div class="team-num">Team Member 02</div>
+          <div class="team-name">Ramagiri Rishik Rao</div>
+          <div class="team-id">ID: 2520030333</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tech stack footer -->
+    <div class="bottom-stack" style="margin-top:14px;">
+      HTML5 · CSS3 · React.js · Node.js · Express.js · MySQL · REST API · Axios · Redux · Tailwind · React Router
+    </div>
+
+  </div><!-- inner -->
+
+  <!-- Bottom borders -->
+  <div class="bottom-border-thin"></div>
+  <div class="bottom-border-thick"></div>
+
+</div><!-- poster -->
+</body>
+</html>
