@@ -39,6 +39,8 @@ export default function PaperDetail() {
   const authors = asArray(paper.authors);
   const keywords = asArray(paper.keywords);
   const fileUrl = paper.fileUrl ? `${uploadsBase}${paper.fileUrl}` : null;
+  const externalPdfUrl = paper.externalPdfUrl || null;
+  const pdfSrc = fileUrl || externalPdfUrl;
   const codeUrl = paper.codeUrl ? `${uploadsBase}${paper.codeUrl}` : null;
 
   return (
@@ -146,19 +148,19 @@ export default function PaperDetail() {
           </section>
 
           {/* PDF viewer or locked */}
-          {fileUrl ? (
+          {pdfSrc ? (
             <section>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-strong)' }}>
                 <h2 style={{ fontFamily: "'Merriweather', serif", fontSize: '1.1rem', color: 'var(--primary)', margin: 0 }}>
                   Full Text
                 </h2>
-                <a className="button" href={fileUrl} download target="_blank" rel="noreferrer"
+                <a className="button" href={pdfSrc} download={!!fileUrl} target="_blank" rel="noreferrer"
                   style={{ fontSize: '0.82rem' }}>
-                  Download PDF
+                  {fileUrl ? 'Download PDF' : 'View on arXiv'}
                 </a>
               </div>
               <section style={{ height: '800px', borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--border-strong)' }}>
-                <iframe title={paper.title} src={fileUrl} style={{ width: '100%', height: '100%', border: 'none' }} />
+                <iframe title={paper.title} src={pdfSrc} style={{ width: '100%', height: '100%', border: 'none' }} />
               </section>
             </section>
           ) : (

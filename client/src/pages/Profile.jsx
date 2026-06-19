@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import BadgeIcon from '../components/BadgeIcon.jsx';
-import { paperApi, userApi } from '../api/endpoints.js';
+import { paperApi, userApi, categoryApi } from '../api/endpoints.js';
 
 function scholarLinksToText(links) {
   return Array.isArray(links) ? links.join('\n') : '';
@@ -10,6 +11,9 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [share, setShare] = useState('');
   const [editing, setEditing] = useState(false);
+  const [editingPaper, setEditingPaper] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [paperForm, setPaperForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
@@ -36,6 +40,7 @@ export default function Profile() {
 
   useEffect(() => {
     load();
+    categoryApi.list().then(({ data }) => setCategories(data));
   }, []);
 
   async function respond(requestId, status) {
@@ -46,6 +51,45 @@ export default function Profile() {
   async function createShare(paperId) {
     const { data } = await paperApi.shareLink(paperId);
     setShare(data.url);
+  }
+
+  function openEditPaper(paper) {
+    setPaperForm({
+      title: paper.title || '',
+      abstract: paper.abstract || '',
+      authors: Array.isArray(paper.authors) ? paper.authors.join('; ') : (paper.authors || ''),
+      keywords: Array.isArray(paper.keywords) ? paper.keywords.join(', ') : (paper.keywords || ''),
+      doi: paper.doi || '',
+      journal: paper.journal || '',
+      year: paper.year || '',
+      volume: paper.volume || '',
+      issue: paper.issue || '',
+      category_id: paper.category_id || '',
+      visibility: paper.visibility || 'public',
+      license: paper.license || 'open_access'
+    });
+    setEditingPaper(paper);
+  }
+
+  async function savePaper(event) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    try {
+      const payload = {
+        ...paperForm,
+        authors: paperForm.authors.split(';').map(a => a.trim()).filter(Boolean),
+        keywords: paperForm.keywords.split(',').map(k => k.trim()).filter(Boolean)
+      };
+      await paperApi.update(editingPaper.id, payload);
+      setEditingPaper(null);
+      setMessage('Paper updated successfully.');
+      await load();
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Failed to update paper.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveProfile(event) {
@@ -147,6 +191,86 @@ export default function Profile() {
         </div>
       )}
 
+      {editingPaper && (
+        <div className="modal-overlay" onClick={() => setEditingPaper(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px' }}>
+            <div className="section-heading tight" style={{ marginBottom: '2rem' }}>
+              <div>
+                <p className="eyebrow dark">Paper editor</p>
+                <h2>Edit paper details</h2>
+              </div>
+              <button className="ghost-button" onClick={() => setEditingPaper(null)}>Close</button>
+            </div>
+            <form className="form-grid auth-form-grid" onSubmit={savePaper}>
+              <div className="auth-two-column">
+                <label className="auth-field-wide">
+                  Title
+                  <input value={paperForm.title} onChange={(e) => setPaperForm({ ...paperForm, title: e.target.value })} required />
+                </label>
+                <label className="auth-field-wide">
+                  Abstract
+                  <textarea rows={4} value={paperForm.abstract} onChange={(e) => setPaperForm({ ...paperForm, abstract: e.target.value })} required />
+                </label>
+                <label className="auth-field-wide">
+                  Authors (semicolon-separated)
+                  <input value={paperForm.authors} onChange={(e) => setPaperForm({ ...paperForm, authors: e.target.value })} />
+                </label>
+                <label className="auth-field-wide">
+                  Keywords (comma-separated)
+                  <input value={paperForm.keywords} onChange={(e) => setPaperForm({ ...paperForm, keywords: e.target.value })} />
+                </label>
+                <label>
+                  DOI
+                  <input value={paperForm.doi} onChange={(e) => setPaperForm({ ...paperForm, doi: e.target.value })} />
+                </label>
+                <label>
+                  Journal
+                  <input value={paperForm.journal} onChange={(e) => setPaperForm({ ...paperForm, journal: e.target.value })} />
+                </label>
+                <label>
+                  Year
+                  <input type="number" value={paperForm.year} onChange={(e) => setPaperForm({ ...paperForm, year: e.target.value })} />
+                </label>
+                <label>
+                  Volume
+                  <input value={paperForm.volume} onChange={(e) => setPaperForm({ ...paperForm, volume: e.target.value })} />
+                </label>
+                <label>
+                  Category
+                  <select value={paperForm.category_id} onChange={(e) => setPaperForm({ ...paperForm, category_id: e.target.value })}>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Visibility
+                  <select value={paperForm.visibility} onChange={(e) => setPaperForm({ ...paperForm, visibility: e.target.value })}>
+                    <option value="public">Public</option>
+                    <option value="restricted">Restricted</option>
+                    <option value="private">Private</option>
+                  </select>
+                </label>
+                <label>
+                  License
+                  <select value={paperForm.license} onChange={(e) => setPaperForm({ ...paperForm, license: e.target.value })}>
+                    <option value="open_access">Open Access</option>
+                    <option value="cc_by">CC BY</option>
+                    <option value="cc_by_sa">CC BY-SA</option>
+                    <option value="cc_by_nc">CC BY-NC</option>
+                    <option value="all_rights_reserved">All Rights Reserved</option>
+                  </select>
+                </label>
+              </div>
+              <div className="action-row" style={{ marginTop: '2rem' }}>
+                <button disabled={saving} style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>{saving ? 'Saving...' : 'Save paper'}</button>
+                <button type="button" className="ghost-button" onClick={() => setEditingPaper(null)} style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {message ? <div className="workspace-panel"><p className="success">{message}</p></div> : null}
 
       <section className="workspace-metrics">
@@ -223,6 +347,8 @@ export default function Profile() {
                   <div className="profile-paper-meta">
                     <span className={`chip ${paper.status}`}>{paper.status}</span>
                     <span className={`chip ${paper.visibility}`}>{paper.visibility}</span>
+                    <button onClick={() => openEditPaper(paper)}>Edit</button>
+                    <Link to={`/papers/${paper.id}`} className="ghost-button" style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem' }}>View</Link>
                     {paper.visibility === 'private' && <button onClick={() => createShare(paper.id)}>Create private link</button>}
                   </div>
                 </article>

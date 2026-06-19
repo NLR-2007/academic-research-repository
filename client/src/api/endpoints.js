@@ -15,6 +15,7 @@ export const paperApi = {
   extract: (data) => api.post('/papers/extract', data),
   duplicateCheck: (title) => api.get('/papers/duplicate-check', { params: { title } }),
   submit: (data) => api.post('/papers/submit', data),
+  update: (id, data) => api.put(`/papers/${id}`, data),
   requestAccess: (id) => api.post(`/papers/${id}/request-access`),
   respondAccess: (requestId, status) => api.post(`/papers/access-requests/${requestId}/respond`, { status }),
   shareLink: (id) => api.post(`/papers/${id}/share-link`)

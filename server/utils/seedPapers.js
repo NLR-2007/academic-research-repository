@@ -51,7 +51,7 @@ async function fetchArxiv(query, maxResults, attempt = 1) {
   } catch (err) {
     if (attempt < 3) {
       process.stdout.write(`retry ${attempt}… `);
-      await new Promise(r => setTimeout(r, 3000 * attempt));
+      await new Promise(r => setTimeout(r, 5000 * attempt));
       return fetchArxiv(query, maxResults, attempt + 1);
     }
     throw err;
@@ -140,12 +140,16 @@ async function seedPapers() {
   let inserted    = 0;
   let skipped     = 0;
 
-  for (const source of SOURCES) {
+  for (let i = 0; i < SOURCES.length; i++) {
+    const source = SOURCES[i];
     const catId = catMap[source.category.toLowerCase()];
     if (!catId) {
       console.warn(`  ⚠  Category not found in DB: "${source.category}" — skipping`);
       continue;
     }
+
+    // arXiv rate-limits aggressively — wait 4s between requests to avoid 429
+    if (i > 0) await new Promise(r => setTimeout(r, 4000));
 
     process.stdout.write(`  Fetching ${perSource} papers [${source.query}] … `);
 

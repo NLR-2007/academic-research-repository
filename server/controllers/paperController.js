@@ -16,6 +16,7 @@ function parseJson(value, fallback = []) {
 
 async function canAccessPaper(paper, user, token) {
   if (paper.visibility === 'public') return true;
+  if (user && user.role === 'admin') return true;
   if (paper.visibility === 'restricted') return Boolean(user);
   if (user && user.id === paper.user_id) return true;
   if (token) {
@@ -252,9 +253,14 @@ async function getPaper(req, res) {
     if (reqRow) requestStatus = reqRow.status;
   }
 
-  const fileUrl = allowed ? `/uploads/${paper.file_path}` : null;
+  let fileUrl = (allowed && paper.file_path) ? `/uploads/${paper.file_path}` : null;
+  let externalPdfUrl = null;
+  if (allowed && !paper.file_path && paper.doi && paper.doi.startsWith('10.48550/arXiv.')) {
+    const arxivId = paper.doi.replace('10.48550/arXiv.', '');
+    externalPdfUrl = `https://arxiv.org/pdf/${arxivId}.pdf`;
+  }
   const codeUrl = (allowed && paper.code_path) ? `/uploads/${paper.code_path}` : null;
-  res.json({ ...paper, canAccess: allowed, fileUrl, codeUrl, requestStatus });
+  res.json({ ...paper, canAccess: allowed, fileUrl, externalPdfUrl, codeUrl, requestStatus });
 }
 
 async function requestAccess(req, res) {
@@ -319,6 +325,54 @@ async function trending(_req, res) {
   res.json(rows);
 }
 
+async function updatePaper(req, res) {
+  const [[paper]] = await pool.query(
+    'SELECT * FROM research_papers WHERE id = ? AND is_deleted = FALSE',
+    [req.params.id]
+  );
+  if (!paper) return res.status(404).json({ message: 'Paper not found' });
+  if (paper.user_id !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'You can only edit your own papers' });
+  }
+
+  const { title, abstract, keywords, authors, doi, journal, year, volume, issue,
+          category_id, sub_category, visibility, license } = req.body;
+
+  await pool.query(
+    `UPDATE research_papers SET
+       title = COALESCE(?, title),
+       abstract = COALESCE(?, abstract),
+       keywords = COALESCE(?, keywords),
+       authors = COALESCE(?, authors),
+       doi = COALESCE(?, doi),
+       journal = COALESCE(?, journal),
+       year = COALESCE(?, year),
+       volume = COALESCE(?, volume),
+       issue = COALESCE(?, issue),
+       category_id = COALESCE(?, category_id),
+       sub_category = COALESCE(?, sub_category),
+       visibility = COALESCE(?, visibility),
+       license = COALESCE(?, license)
+     WHERE id = ?`,
+    [
+      title || null, abstract || null,
+      keywords ? JSON.stringify(parseJson(keywords)) : null,
+      authors ? JSON.stringify(parseJson(authors)) : null,
+      doi || null, journal || null, year ? Number(year) : null,
+      volume || null, issue || null,
+      category_id ? Number(category_id) : null, sub_category || null,
+      visibility || null, license || null,
+      req.params.id
+    ]
+  );
+
+  const [[updated]] = await pool.query(
+    'SELECT p.*, c.name AS category_name FROM research_papers p JOIN categories c ON c.id = p.category_id WHERE p.id = ?',
+    [req.params.id]
+  );
+  res.json(updated);
+}
+
 module.exports = {
   uploadTemp,
   extractPdf,
@@ -326,6 +380,7 @@ module.exports = {
   submitPaper,
   listPapers,
   getPaper,
+  updatePaper,
   requestAccess,
   respondAccess,
   createShareLink,
